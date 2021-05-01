@@ -1,6 +1,11 @@
 """Install GUI integration on Windows"""
 
 import sys
+import os
+
+# TODO as argument
+style = "jupyter"  # voila
+template = ""  # --template vuetify-default   # with space at the end if not empty
 
 try:
   import winreg
@@ -15,10 +20,31 @@ with winreg.CreateKey(winreg.HKEY_CURRENT_USER, "Software\Classes\.ipynb") as k:
     with winreg.CreateKey(k, "OpenWithProgIds") as openwith:
         winreg.SetValueEx(openwith, "Jupyter.nbopen", 0, winreg.REG_NONE, b'')
 
+# check if we're in a conda env
 executable = sys.executable
-if executable.endswith("python.exe"):
-    executable = executable[:-10] + 'pythonw.exe'
-launch_cmd = '"{}" -m nbopen "%1"'.format(executable)
+try:
+    conda_env = os.environ['CONDA_DEFAULT_ENV']
+    # TODO automatically find Anaconda python.exe (Admin install ProgramData, otherwise
+    #  C:\Users\User-Name\Anaconda3\Scripts\anaconda.exe)
+    launch_cmd = f'"C:\ProgramData\Anaconda3\python.exe" -m conda run -n {conda_env} pythonw -m '
+    if style == "jupyter":
+        launch_cmd += 'nbopen "%1"'
+    elif style == "voila":
+        launch_cmd += f'voila {template}"%1"'
+    else:
+        raise ValueError(f"style '{style}' not supported.")
+    
+    print(f"Anaconda environment found: {conda_env}")
+    print(f"Setting up command:\n{launch_cmd}")
+# TODO check branches for new commands
+except KeyError as e:
+    print(f"Install script not called in a Conda environment:\n{e}")
+
+    if executable.endswith("python.exe"):
+        executable = executable[:-10] + 'pythonw.exe'
+    launch_cmd = f'"{executable}" -m nbopen "%1"'
+    
+    print(f"Setting up old command (not working in Windows 10)\n{launch_cmd}")
 
 with winreg.CreateKey(winreg.HKEY_CURRENT_USER, "Software\Classes\Jupyter.nbopen") as k:
     winreg.SetValue(k, "", SZ, "IPython notebook")
