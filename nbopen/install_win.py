@@ -2,10 +2,23 @@
 
 import sys
 import os
+import argparse
 
-# TODO as argument
-style = "jupyter"  # voila
-template = ""  # --template vuetify-default   # with space at the end if not empty
+# Check arguments
+# command line arguments
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--library", default="nbopen",
+                    help="What Python library to open `.ipynb` with. E.g. 'nbopen' (for Jupyter Notebook) or 'voila'")
+parser.add_argument("--launch", default="",
+                    help="Add extra launch arguments. E.g. --template vuetify-default (need space at end if not empty)")
+
+args, leftovers = parser.parse_known_args()
+print(f"The following arguments are used: {args}")
+print(f"The following arguments are ignored: {leftovers}\n")
+
+# library = "jupyter"  # voila
+# launch = ""  # --template vuetify-default   # with space at the end if not empty
 
 try:
   import winreg
@@ -27,12 +40,13 @@ try:
     # TODO automatically find Anaconda python.exe (Admin install ProgramData, otherwise
     #  C:\Users\User-Name\Anaconda3\Scripts\anaconda.exe)
     launch_cmd = f'"C:\ProgramData\Anaconda3\python.exe" -m conda run -n {conda_env} pythonw -m '
-    if style == "jupyter":
-        launch_cmd += 'nbopen "%1"'
-    elif style == "voila":
-        launch_cmd += f'voila {template}"%1"'
-    else:
-        raise ValueError(f"style '{style}' not supported.")
+    launch_cmd += f'{args.library} {args.launch}"%1"'
+    # if style == "jupyter":
+    #     launch_cmd += 'nbopen "%1"'
+    # elif style == "voila":
+    #     launch_cmd += f'voila {template}"%1"'
+    # else:
+    #     raise ValueError(f"style '{style}' not supported.")
     
     print(f"Anaconda environment found: {conda_env}")
     print(f"Setting up command:\n{launch_cmd}")
